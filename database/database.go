@@ -2,31 +2,32 @@ package database
 
 import (
 	"database/sql"
-	"log"
+	"fmt"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var PoolDB *sql.DB = nil
-
-func GetConnection(username string, password string, databaseName string, path string) {
+func GetConnection(username string, password string, databaseName string, path string) *sql.DB {
 	// Open connection
 	PoolDB, err := sql.Open("mysql", username+":"+password+"@tcp("+path+":3306)/"+databaseName)
 	if err != nil {
-		log.Fatal("Failed to connect")
-		return
+		fmt.Println("Failed to connect")
+		return nil
 	}
 
 	// Check Connection
 	err = PoolDB.Ping()
 	if err != nil {
-		log.Fatal("Inconnect credential")
-		return
+		fmt.Println("Inconnect credential")
+		// log.Fatal("Inconnect credential")
+		return nil
 	}
 
 	PoolDB.SetMaxIdleConns(5)
 	PoolDB.SetMaxOpenConns(10)
 	PoolDB.SetConnMaxIdleTime(3 * time.Minute)
 	PoolDB.SetConnMaxLifetime(2 * time.Hour)
+	fmt.Println("Success make connection")
+	return PoolDB
 }

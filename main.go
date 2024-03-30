@@ -12,9 +12,10 @@ import (
 )
 
 func GetData(w http.ResponseWriter, request *http.Request) {
+	db := database.GetConnection("root", "12345678", "Testing", "database-rds.cbyi6oqugc5k.us-east-1.rds.amazonaws.com")
 	query := "SELECT * FROM Students WHERE NIM = ?"
 	ctx := context.Background()
-	statement, err := database.PoolDB.PrepareContext(ctx, query)
+	statement, err := db.PrepareContext(ctx, query)
 	if err != nil {
 		fmt.Fprintf(w, "Error")
 		return
@@ -44,7 +45,6 @@ func RootHandler(w http.ResponseWriter, request *http.Request) {
 
 func main() {
 	mux := http.NewServeMux()
-	database.GetConnection("root", "12345678", "Testing", "database-rds.cbyi6oqugc5k.us-east-1.rds.amazonaws.com")
 	mux.HandleFunc("/", RootHandler)
 	mux.HandleFunc("/studentInfo", GetData)
 	webServer := http.Server{
