@@ -18,25 +18,30 @@ func GetData(w http.ResponseWriter, request *http.Request) {
 	ctx := context.Background()
 	statement, err := db.PrepareContext(ctx, query)
 	if err != nil {
-		fmt.Fprintf(w, "Error")
+		fmt.Fprint(w, "Error")
 		return
 	}
 
 	result, err := statement.QueryContext(ctx, NIM)
 	if err != nil {
-		fmt.Fprintf(w, "Error")
+		fmt.Fprint(w, "Error")
 		return
 	}
 
 	mahasiswa := models.Student{}
-	for result.Next() {
-		err := result.Scan(&mahasiswa.NIM, &mahasiswa.Name, &mahasiswa.Age)
-		if err != nil {
-			fmt.Fprintf(w, "Error")
-			return
-		}
+	if !result.Next() {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "Students With that NIM not found")
+		return
+	}
+
+	err = result.Scan(&mahasiswa.NIM, &mahasiswa.Name, &mahasiswa.Age)
+	if err != nil {
+		fmt.Fprint(w, "Error")
+		return
 	}
 	response := "NIM: " + mahasiswa.NIM + "\nNama: " + mahasiswa.Name + "\nAge: " + strconv.Itoa(mahasiswa.Age)
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(response))
 }
 
@@ -49,10 +54,7 @@ func main() {
 	mux.HandleFunc("/", RootHandler)
 	mux.HandleFunc("/studentInfo", GetData)
 	webServer := http.Server{
-		Addr: "ec2-3-83-103-232.compute-1.amazonaws.com:8080",
-		// Addr: ip:port
-		// Addr: "192.168.0.101:8080",
-		// Addr: "localhost:8080"
+		Addr:    "ec2-3-83-103-232.compute-1.amazonaws.com:8080",
 		Handler: mux,
 	}
 
