@@ -1,6 +1,6 @@
 module github.com/RichSvK/Go_WebServer
 
-go 1.18.1
+go 1.23
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
