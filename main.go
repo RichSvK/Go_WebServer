@@ -49,8 +49,8 @@ func main() {
 	mux.HandleFunc("/", RootHandler)
 	mux.HandleFunc("/studentInfo/", GetData)
 	webServer := http.Server{
-		// Addr:    "ec2-54-175-135-147.compute-1.amazonaws.com:8080",
-		Addr:    "localhost:8080",
+		Addr: "ec2-54-175-135-147.compute-1.amazonaws.com:8080",
+		// Addr:    "localhost:8080",
 		Handler: mux,
 	}
 
