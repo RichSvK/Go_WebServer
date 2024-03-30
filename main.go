@@ -13,6 +13,7 @@ import (
 
 func GetData(w http.ResponseWriter, request *http.Request) {
 	db := database.GetConnection("root", "12345678", "Testing", "database-rds.cbyi6oqugc5k.us-east-1.rds.amazonaws.com")
+	NIM := request.URL.Query().Get("nim")
 	query := "SELECT * FROM Students WHERE NIM = ?"
 	ctx := context.Background()
 	statement, err := db.PrepareContext(ctx, query)
@@ -21,7 +22,7 @@ func GetData(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	result, err := statement.QueryContext(ctx, "2602061561")
+	result, err := statement.QueryContext(ctx, NIM)
 	if err != nil {
 		fmt.Fprintf(w, "Error")
 		return
@@ -46,9 +47,10 @@ func RootHandler(w http.ResponseWriter, request *http.Request) {
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", RootHandler)
-	mux.HandleFunc("/studentInfo", GetData)
+	mux.HandleFunc("/studentInfo/", GetData)
 	webServer := http.Server{
-		Addr:    "ec2-54-175-135-147.compute-1.amazonaws.com:8080",
+		// Addr:    "ec2-54-175-135-147.compute-1.amazonaws.com:8080",
+		Addr:    "localhost:8080",
 		Handler: mux,
 	}
 
