@@ -10,10 +10,10 @@ import (
 )
 
 func TestDatabase(t *testing.T) {
-	db := database.GetConnection("root", "12345678", "Testing", "database-rds.cbyi6oqugc5k.us-east-1.rds.amazonaws.com")
+	database.GetConnection("root", "12345678", "Testing", "database-rds.cbyi6oqugc5k.us-east-1.rds.amazonaws.com")
 	query := "SELECT * FROM Students"
 	ctx := context.Background()
-	statement, err := db.PrepareContext(ctx, query)
+	statement, err := database.PoolDB.PrepareContext(ctx, query)
 	fmt.Println("Test")
 	if err != nil {
 		fmt.Println("Error 1")

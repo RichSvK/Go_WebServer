@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,37 +11,30 @@ import (
 )
 
 func GetData(w http.ResponseWriter, request *http.Request) {
-	db := database.GetConnection("root", "12345678", "Testing", "database-rds.cbyi6oqugc5k.us-east-1.rds.amazonaws.com")
-	NIM := request.URL.Query().Get("nim")
-	query := "SELECT * FROM Students WHERE NIM = ?"
-	ctx := context.Background()
-	statement, err := db.PrepareContext(ctx, query)
-	if err != nil {
-		fmt.Fprint(w, "Error")
-		return
+	NIM := request.URL.Query().Get("NIM")
+	status := 0
+	mahasiswa := &models.Student{}
+	if len(NIM) != 10 {
+		status = http.StatusBadRequest
+	} else {
+		status = database.GetStudent(NIM, mahasiswa)
 	}
 
-	result, err := statement.QueryContext(ctx, NIM)
-	if err != nil {
-		fmt.Fprint(w, "Error")
-		return
-	}
-
-	mahasiswa := models.Student{}
-	if !result.Next() {
+	switch status {
+	case http.StatusInternalServerError:
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "Internal Server Error")
+	case http.StatusNotFound:
 		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "Students With that NIM not found")
-		return
+		fmt.Fprintf(w, "Student with NIM %s not found\n", NIM)
+	case http.StatusOK:
+		w.WriteHeader(http.StatusOK)
+		response := "NIM: " + mahasiswa.NIM + "\nNama: " + mahasiswa.Name + "\nAge: " + strconv.Itoa(mahasiswa.Age)
+		w.Write([]byte(response))
+	case http.StatusBadRequest:
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Bad Request"))
 	}
-
-	err = result.Scan(&mahasiswa.NIM, &mahasiswa.Name, &mahasiswa.Age)
-	if err != nil {
-		fmt.Fprint(w, "Error")
-		return
-	}
-	response := "NIM: " + mahasiswa.NIM + "\nNama: " + mahasiswa.Name + "\nAge: " + strconv.Itoa(mahasiswa.Age)
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(response))
 }
 
 func RootHandler(w http.ResponseWriter, request *http.Request) {
@@ -50,15 +42,29 @@ func RootHandler(w http.ResponseWriter, request *http.Request) {
 }
 
 func main() {
+	// err := database.GetConnection("root", "root", "localhost", "Testing")
+	// if err != nil {
+	// 	fmt.Println("Failed to connect")
+	// 	return
+	// }
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", RootHandler)
-	mux.HandleFunc("/studentInfo", GetData)
+	mux.HandleFunc("/studentInfo/", GetData)
+	err := database.GetConnection("root", "12345678", "database-rds.cbyi6oqugc5k.us-east-1.rds.amazonaws.com", "Testing")
+	// err := database.GetConnection("root", "root", "localhost", "Testing")
+	if err != nil {
+		fmt.Println("Failed to connect")
+		return
+	}
+	defer database.PoolDB.Close()
 	webServer := http.Server{
-		Addr:    "ec2-3-83-103-232.compute-1.amazonaws.com:8080",
+		Addr: "ec2-34-201-134-21.compute-1.amazonaws.com:8080",
+		// Addr:    "localhost:8080",
 		Handler: mux,
 	}
 
-	err := webServer.ListenAndServe()
+	err = webServer.ListenAndServe()
 	if err != nil {
 		log.Fatal("Error")
 		return
