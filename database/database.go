@@ -30,7 +30,7 @@ func GetConnection(username string, password string, host string, databaseName s
 		return err
 	}
 
-	PoolDB.SetMaxIdleConns(5)
+	PoolDB.SetMaxIdleConns(3)
 	PoolDB.SetMaxOpenConns(10)
 	PoolDB.SetConnMaxIdleTime(5 * time.Minute)
 	PoolDB.SetConnMaxLifetime(1 * time.Hour)
@@ -43,28 +43,58 @@ func GetStudent(NIM string, student *models.Student) int {
 	ctx := context.Background()
 	statement, err := PoolDB.PrepareContext(ctx, query)
 	if err != nil {
-		fmt.Println("error 0")
-		fmt.Println(err)
 		return http.StatusInternalServerError
 	}
 	defer statement.Close()
 
 	result, err := statement.QueryContext(ctx, NIM)
 	if err != nil {
-		fmt.Println("error 1")
 		return http.StatusInternalServerError
 	}
 
 	if !result.Next() {
-		fmt.Println("error 2")
 		return http.StatusNotFound
 	}
 	defer result.Close()
 
 	err = result.Scan(&student.NIM, &student.Name, &student.Age)
 	if err != nil {
-		fmt.Println("error 3")
 		return http.StatusInternalServerError
 	}
 	return http.StatusOK
+}
+
+func GetStudents() ([]models.Student, int) {
+	query := "SELECT * FROM Students"
+	ctx := context.Background()
+	statement, err := PoolDB.PrepareContext(ctx, query)
+	if err != nil {
+		return nil, http.StatusInternalServerError
+	}
+	defer statement.Close()
+
+	result, err := statement.QueryContext(ctx)
+	if err != nil {
+		return nil, http.StatusInternalServerError
+	}
+	defer result.Close()
+
+	if !result.Next() {
+		return nil, http.StatusNotFound
+	}
+
+	listStudent := []models.Student{}
+	student := models.Student{}
+	for {
+		err = result.Scan(&student.NIM, &student.Name, &student.Age)
+		if err != nil {
+			return nil, http.StatusInternalServerError
+		}
+		listStudent = append(listStudent, student)
+		if !result.Next() {
+			break
+		}
+	}
+
+	return listStudent, http.StatusOK
 }
