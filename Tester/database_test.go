@@ -10,19 +10,19 @@ import (
 )
 
 func TestDatabase(t *testing.T) {
-	database.GetConnection("root", "12345678", "Testing", "database-rds.cbyi6oqugc5k.us-east-1.rds.amazonaws.com")
+	err := database.GetConnection("root", "12345678", "database-rds.cbyi6oqugc5k.us-east-1.rds.amazonaws.com", "Testing")
+	if err != nil {
+		t.FailNow()
+	}
 	query := "SELECT * FROM Students"
 	ctx := context.Background()
 	statement, err := database.PoolDB.PrepareContext(ctx, query)
-	fmt.Println("Test")
 	if err != nil {
-		fmt.Println("Error 1")
 		t.FailNow()
 	}
 
 	result, err := statement.QueryContext(ctx)
 	if err != nil {
-		fmt.Println("Error 2")
 		t.FailNow()
 		return
 	}
@@ -31,10 +31,8 @@ func TestDatabase(t *testing.T) {
 	for result.Next() {
 		err := result.Scan(&mahasiswa.NIM, &mahasiswa.Name, &mahasiswa.Age)
 		if err != nil {
-			fmt.Println("Error 3")
 			t.FailNow()
 		}
-		// response := "NIM: " + mahasiswa.NIM + "\nNama: " + mahasiswa.Name + "\nAge: " + strconv.Itoa(mahasiswa.Age)
 		fmt.Println(mahasiswa)
 	}
 }
